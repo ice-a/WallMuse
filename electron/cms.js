@@ -7,6 +7,34 @@ const https = require('https');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
+/**
+ * 内置苹果CMS V10 资源站预设（公开采集接口，可在设置中再添加自定义站）。
+ * 仅为标准 MacCMS V10 provide 接口基址，不含任何播放地址；播放地址由接口实时返回。
+ * 部分站点有访问频率/地区限制，可用「影视」页的「＋ 添加并测试」自行校验。
+ */
+const PRESETS = [
+  { name: 'OK资源站', url: 'https://www.okzy.tv/api.php/provide/vod' },
+  { name: '看吧资源', url: 'https://api.kanstat.com/api.php/provide/vod' },
+  { name: '黑木耳资源', url: 'https://www.heimuer.tv/api.php/provide/vod' },
+  { name: '南湘影视', url: 'https://www.nxny.cc/api.php/provide/vod' },
+  { name: '最大资源', url: 'https://www.zdzw.cc/api.php/provide/vod' },
+  { name: '影视APP', url: 'https://www.ysapp.cc/api.php/provide/vod' },
+  { name: '萝卜电影', url: 'https://www.lbdy999.com/api.php/provide/vod' },
+  { name: 'MD资源', url: 'https://www.mdapi.cc/api.php/provide/vod' },
+  { name: '采集资源', url: 'https://www.caijizy.cc/api.php/provide/vod' },
+  { name: '沃沃资源', url: 'https://api.vovoa.cc/api.php/provide/vod' },
+];
+
+/** 返回内置预设站列表（按 url 去重） */
+function presets() {
+  const seen = new Set();
+  return PRESETS.filter((x) => {
+    if (!x.url || seen.has(x.url)) return false;
+    seen.add(x.url);
+    return true;
+  });
+}
+
 function getJson(urlStr, timeout = 20000) {
   return new Promise((resolve, reject) => {
     const u = new URL(urlStr);
@@ -122,4 +150,4 @@ async function test(api) {
   return { ok: false, hint: r.error };
 }
 
-module.exports = { search, detail, test };
+module.exports = { search, detail, test, presets };

@@ -1,0 +1,98 @@
+{
+  "type": "wallmuse-config",
+  "note": "WallMuse 基础配置示例（不含任何真实密钥 / 源地址，全部为占位符）。通过「设置 → 备份与导入 → 导入文件」加载，或用「从 URL 导入」加载可托管的副本。敏感字段（apiKey 等）建议放在数据目录的 .env，本示例仅作结构参考。",
+  "settings": {
+    "theme": "dark",
+    "autoRotate": false,
+    "rotateMinutes": 30,
+    "rotateFilter": {
+      "minWidth": 1280,
+      "minHeight": 720,
+      "tags": []
+    },
+    "aiPresets": [
+      {
+        "name": "示例生图服务",
+        "baseUrl": "https://your-openai-compatible-host/v1",
+        "apiKey": "<YOUR_AI_IMAGE_API_KEY>",
+        "model": "gpt-image-1"
+      }
+    ],
+    "aiActive": 0,
+    "chatPresets": [
+      {
+        "name": "示例对话服务",
+        "baseUrl": "https://your-openai-compatible-host/v1",
+        "apiKey": "<YOUR_CHAT_API_KEY>",
+        "model": "gpt-4o"
+      }
+    ],
+    "chatActive": 0,
+    "chatAgents": [],
+    "customSources": {
+      "image": [
+        {
+          "id": "ex1",
+          "name": "示例图片源",
+          "url": "https://example.com/api/img",
+          "kind": "texturl"
+        }
+      ],
+      "text": [
+        {
+          "id": "ex2",
+          "name": "示例文字源",
+          "url": "https://example.com/api/text",
+          "kind": "json",
+          "target": "data.content"
+        }
+      ],
+      "video": [
+        {
+          "id": "ex3",
+          "name": "示例视频源",
+          "url": "https://example.com/api/video",
+          "kind": "direct"
+        }
+      ]
+    },
+    "builtinSources": {
+      "image": [],
+      "text": [],
+      "video": []
+    },
+    "randomChains": {
+      "desktop": [
+        {
+          "name": "示例随机桌面",
+          "url": "https://example.com/api/random?type=pc"
+        }
+      ],
+      "mobile": [
+        {
+          "name": "示例随机手机",
+          "url": "https://example.com/api/random?type=m"
+        }
+      ]
+    },
+    "endpoints": {
+      "wallhaven": "https://wallhaven.cc/api/v1",
+      "bing": [
+        "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1"
+      ],
+      "netease": "https://your-netease-api-host/api"
+    },
+    "cmsApis": [
+      {
+        "name": "示例影视采集站",
+        "url": "https://example.com/api.php/provide/vod"
+      }
+    ],
+    "musicApis": [
+      {
+        "name": "示例音乐源",
+        "url": "https://your-music-api-host/api/meting"
+      }
+    ]
+  }
+}

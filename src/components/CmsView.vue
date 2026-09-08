@@ -1,6 +1,8 @@
 <script setup>
 import { ref, inject, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 import Hls from 'hls.js';
+import flvjs from 'flv.js';
+import dashjs from 'dashjs';
 
 const ctx = inject('appCtx');
 
@@ -105,10 +107,19 @@ async function openDetail(v) {
 // ---------- 播放器（hls.js） + 沉浸模式 ----------
 const playerEl = ref(null);
 let hls = null;
+let flvPlayer = null;
+let dashPlayer = null;
 const playing = ref(null); // { name, url }
 const playErr = ref('');
-const isM3u8 = (u) => /\.m3u8(\?|$)/i.test(u);
-
+// 按扩展名判断流格式：hls / dash / flv / native(浏览器原生 mp4/webm/ogg/mov 等)
+function mediaKind(u) {
+  const m = String(u).split('?')[0].split('#')[0].match(/.([a-z0-9]+)$/i);
+  const e = m ? m[1].toLowerCase() : '';
+  if (e === 'm3u8') return 'hls';
+  if (e === 'mpd') return 'dash';
+  if (e === 'flv') return 'flv';
+  return 'native';
+}
 // 沉浸模式：播放时隐藏搜索栏 / 详情 / 选集，只展示影片
 const theater = ref(true);
 const videoWrapEl = ref(null);
@@ -135,7 +146,7 @@ function stepEp(d) {
 
 function closePlayer() {
   playing.value = null;
-  destroyHls();
+  destroyPlayer();
   const el = playerEl.value;
   if (el) { el.pause(); el.removeAttribute('src'); el.load?.(); }
 }
@@ -152,9 +163,10 @@ function goFull() {
 function attachPlayer() {
   const el = playerEl.value;
   if (!el || !playing.value) return;
-  destroyHls();
+  destroyPlayer();
   const url = playing.value.url;
-  if (isM3u8(url)) {
+  const kind = mediaKind(url);
+  if (kind === 'hls') {
     if (el.canPlayType('application/vnd.apple.mpegurl')) {
       el.src = url; // Safari 原生
     } else if (Hls.isSupported()) {
@@ -167,17 +179,36 @@ function attachPlayer() {
     } else {
       playErr.value = '当前环境不支持 HLS 播放';
     }
+  } else if (kind === 'dash') {
+    if (dashjs.supportsMediaSource()) {
+      dashPlayer = dashjs.MediaPlayer().create();
+      dashPlayer.initialize(el, url, true);
+      dashPlayer.on('error', () => { playErr.value = 'DASH 播放失败，可尝试换线路或浏览器打开'; });
+    } else {
+      playErr.value = '当前环境不支持 DASH 播放';
+    }
+  } else if (kind === 'flv') {
+    if (flvjs.isSupported()) {
+      flvPlayer = flvjs.createPlayer({ type: 'flv', url, isLive: false });
+      flvPlayer.attachMediaElement(el);
+      flvPlayer.on(flvjs.Events.ERROR, () => { playErr.value = 'FLV 播放失败，可尝试换线路或浏览器打开'; });
+      flvPlayer.load();
+    } else {
+      playErr.value = '当前环境不支持 FLV 播放（需 flv.js）';
+    }
   } else {
-    el.src = url; // mp4 / 其他直链
+    el.src = url; // mp4 / webm / ogg / mov 等浏览器原生格式
   }
   el.play().catch(() => { /* 需要用户手动点播放的情况 */ });
 }
 
-function destroyHls() {
+function destroyPlayer() {
   if (hls) { hls.destroy(); hls = null; }
+  if (flvPlayer) { try { flvPlayer.destroy(); } catch (e) {} flvPlayer = null; }
+  if (dashPlayer) { try { dashPlayer.reset(); } catch (e) {} dashPlayer = null; }
 }
 
-onBeforeUnmount(destroyHls);
+onBeforeUnmount(destroyPlayer);
 
 function openExternal(url) { url && window.open(url, '_blank'); }
 function copyUrl(u) { navigator.clipboard.writeText(u).then(() => ctx.showToast('已复制 ✓')); }

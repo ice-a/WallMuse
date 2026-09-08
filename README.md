@@ -22,11 +22,37 @@
 - **AI 对话** — OpenAI 兼容 `/v1/chat/completions` 流式对话：填 Base URL + Key 后可**一键拉取模型列表**选择（也可手填模型名），支持**连通测试**；多轮上下文、复制、清空，历史记录持久化
 - **AI 小说创作** — 小说工作台：大纲、设定、章节逐章流式生成，章节摘要衔接上下文，多部小说独立保存
 - **音乐** — 网易云开放接口（免登录）+ Meting 聚合接口搜索、在线播放、歌词滚动显示；支持添加自定义 API 站点，先测后存
-- **影视（CMS 资源站）** — 苹果CMS V10 采集接口搜索影视剧集，详情展示海报简介，多线路剧集列表，**hls.js 在线播放 m3u8 与直链视频**，支持复制播放地址 / 浏览器打开；可添加自定义站点
+- **影视（CMS 资源站）** — 苹果CMS V10 采集接口搜索影视剧集，详情展示海报简介，多线路剧集列表，**hls.js 播放 m3u8，并支持 DASH(.mpd) / FLV(.flv) / MP4 等直链格式**，支持复制播放地址 / 浏览器打开；可添加自定义站点
 - **数据存储位置可配置** — 首次启动向导选择数据目录（图库 / 下载 / AI 记录存放处），之后可在设置页**整体迁移**到新位置（自动改写图库路径，原数据保留兜底）
 - **配置备份** — 源 / 接口 / 模型等设置一键导出为 `wallmuse-config` JSON，可文件或 URL 方式导入（`wallmuse-sources.json` 即内置全部第三方源的配置包，可自行托管后应用内导入）
 - **定时轮换** — 按间隔（分钟）从图库随机自动换壁纸
 - **随机换一张** — 从当前筛选结果随机设为壁纸
+
+
+## 基础配置
+
+应用的全部偏好（模型预设、内容源、影视 / 音乐接口、随机源、功能端点等）都可在「设置」页内配置，也可通过 `wallmuse-config` 备份 / 导入一键迁移。仓库内置 `wallmuse-config.example.json` 作为**结构参考模板——不含任何真实密钥或源地址，全部为占位符**，请按需替换后再导入。
+
+### 配置项速览
+
+| 配置键 | 说明 |
+| --- | --- |
+| `theme` / `autoRotate` / `rotateMinutes` / `rotateFilter` | 外观与定时轮换偏好 |
+| `aiPresets` / `aiActive` | AI 生图预设（OpenAI 兼容 `/v1/images/generations`） |
+| `chatPresets` / `chatActive` / `chatAgents` / `chatAgent` | AI 对话预设与自定义 Agent |
+| `customSources` / `builtinSources` | 接口内容源 `{ image, text, video }`，条目 `{ id, name, url, kind, target }` |
+| `randomChains` | 随机壁纸端点 `{ desktop, mobile }` |
+| `endpoints` | 功能接口 `{ wallhaven, bing[], netease }` |
+| `cmsApis` | 影视 CMS 采集接口（苹果CMS V10） |
+| `musicApis` | 音乐源（Meting / 网易云类） |
+
+### 导入示例配置
+
+1. 复制 `wallmuse-config.example.json`，把占位符替换为自己的地址 / 密钥
+2. 「设置 → 备份与导入 → 导入文件」选择该 JSON
+3. 或把修改后的副本托管到可访问 URL，用「从 URL 导入」加载
+
+> 影视采集接口为公开第三方 MacCMS V10 资源站，应用内置若干预设（见「影视」页站点下拉）。部分站点有访问频率 / 地区限制，建议用「＋ 添加并测试」校验可用性，或自备可直连的采集站。
 
 ## 开发
 

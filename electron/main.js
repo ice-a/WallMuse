@@ -195,7 +195,7 @@ function registerIpc() {
   ipcMain.handle('api:test', (_e, src) => apisrc.testSource(src));
 
   // CMS 影视资源（接口列表由设置提供）
-  ipcMain.handle('cms:presets', () => lib.settings.cmsApis || []);
+  ipcMain.handle('cms:presets', () => [...cms.presets(), ...(lib.settings.cmsApis || [])]);
   ipcMain.handle('cms:search', (_e, params) => cms.search(params));
   ipcMain.handle('cms:detail', (_e, params) => cms.detail(params));
   ipcMain.handle('cms:test', (_e, api) => cms.test(api));
