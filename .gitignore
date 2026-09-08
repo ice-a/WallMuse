@@ -18,3 +18,6 @@ wf-src-checks.json
 # 接口测试材料（含第三方源地址，不公开）
 api-report.json
 test-apis.js
+
+# 本地私有源配置（含第三方/成人源地址，不公开推送）
+config.local.yaml
