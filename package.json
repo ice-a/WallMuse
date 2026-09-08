@@ -1,0 +1,87 @@
+{
+  "name": "wallmuse",
+  "productName": "WallMuse",
+  "version": "1.0.0",
+  "description": "Cross-platform desktop inspiration suite — wallpaper gallery, discovery, AI generation & chat, music, novels, one-click set, auto-rotate",
+  "main": "electron/main.js",
+  "author": {
+    "name": "爱喝水的木子"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "vite build && electron .",
+    "build": "vite build && electron-builder",
+    "build:ci": "vite build && electron-builder --publish never",
+    "build:dir": "vite build && electron-builder --dir",
+    "build:linux": "vite build && electron-builder --linux AppImage deb",
+    "build:win": "vite build && electron-builder --win nsis portable",
+    "build:mac": "vite build && electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.11",
+    "vue": "^3.5.13"
+  },
+  "build": {
+    "appId": "com.wallmuse.app",
+    "productName": "WallMuse",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.photography"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Graphics"
+    }
+  },
+  "dependencies": {
+    "hls.js": "^1.5.20"
+  }
+}

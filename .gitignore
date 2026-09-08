@@ -1,0 +1,16 @@
+node_modules/
+dist/
+release/
+*.log
+.DS_Store
+Thumbs.db
+
+# 源/接口配置包 — 从代码中提取的全部第三方源，不随仓库公开（可自行托管后用应用内 URL 导入）
+wallmuse-sources.json
+
+# 私有源采集与测试材料（不公开推送）
+api接口/
+
+# 无头回归测试产物（test-sources.js 隔离环境与输出）
+.test-userdata/
+wf-src-checks.json

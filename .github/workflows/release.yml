@@ -1,0 +1,72 @@
+# 自动发版：推送 v* 标签（或手动触发）→ 三平台构建 → 自动创建 GitHub Release 并上传安装包
+#
+# 用法：
+#   npm version patch        # 1.0.0 -> 1.0.1，自动打 tag
+#   git push --follow-tags   # 推送代码和标签，触发本工作流
+#
+# 产物：Windows（nsis 安装包 + portable）、macOS（dmg，未签名）、Linux（AppImage + deb）
+# Release 说明由 GitHub 根据两次发版之间的提交自动生成
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: # 也允许在 Actions 页面手动触发
+
+permissions:
+  contents: write # 创建 Release 需要写权限
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建应用
+        run: npm run build:ci
+        env:
+          # macOS 无签名证书时跳过签名（产物可正常使用，首次打开需右键 -> 打开）
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: 收集安装包
+        shell: bash
+        run: |
+          mkdir -p stage
+          find release -maxdepth 1 -type f \
+            \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' -o -name '*.deb' \) \
+            -exec cp {} stage/ \;
+          ls -la stage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          path: stage/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: 创建 Release 并上传产物
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*
