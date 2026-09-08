@@ -5,7 +5,8 @@
   "description": "Cross-platform desktop inspiration suite — wallpaper gallery, discovery, AI generation & chat, music, novels, one-click set, auto-rotate",
   "main": "electron/main.js",
   "author": {
-    "name": "爱喝水的木子"
+    "name": "爱喝水的木子",
+    "email": "wallmuse@users.noreply.github.com"
   },
   "license": "MIT",
   "scripts": {
