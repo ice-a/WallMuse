@@ -72,13 +72,18 @@ function parsePlayUrls(vodPlayFrom, vodPlayUrl) {
   const froms = String(vodPlayFrom || '').split('$$$');
   const out = [];
   groups.forEach((g, gi) => {
-    const eps = String(g || '').split('#').map((seg) => {
+    const segs = String(g || '').split('#').map((x) => x.trim()).filter(Boolean);
+    const eps = segs.map((seg, i) => {
       const idx = seg.indexOf('$');
-      if (idx < 0) return null;
-      const name = seg.slice(0, idx).trim();
-      const url = seg.slice(idx + 1).trim();
-      if (!/^https?:\/\//i.test(url)) return null;
-      return { name: name || `第${out.length + 1}集`, url };
+      if (idx >= 0) {
+        const name = seg.slice(0, idx).trim();
+        const url = seg.slice(idx + 1).trim();
+        if (!(url.startsWith('http://') || url.startsWith('https://'))) return null;
+        return { name: name || ('第' + (i + 1) + '集'), url };
+      }
+      // 无 $ 分隔：整段即播放地址（部分站点整部为单一直链，如 .../playlist.m3u8）
+      if (seg.startsWith('http://') || seg.startsWith('https://')) return { name: ('第' + (i + 1) + '集'), url: seg };
+      return null;
     }).filter(Boolean);
     if (eps.length) out.push({ from: (froms[gi] || `线路${gi + 1}`).trim(), episodes: eps });
   });
@@ -113,7 +118,7 @@ async function search({ api, wd = '', pg = 1 }) {
   try {
     const q = new URLSearchParams({ ac: 'detail', pg: String(pg) });
     if (wd) q.set('wd', wd);
-    const j = await getJson(`${base}/?${q}`);
+    const j = await fetchJsonAny(buildCandidates(base, q));
     if (Number(j.code) !== 1 && j.code !== undefined && Number(j.code) !== 0) {
       return { ok: false, error: `接口返回 code=${j.code} ${j.msg || ''}` };
     }
@@ -134,7 +139,7 @@ async function search({ api, wd = '', pg = 1 }) {
 async function detail({ api, id }) {
   const base = normBase(api);
   try {
-    const j = await getJson(`${base}/?${new URLSearchParams({ ac: 'detail', ids: String(id) })}`);
+    const j = await fetchJsonAny(buildCandidates(base, new URLSearchParams({ ac: 'detail', ids: String(id) })));
     const v = Array.isArray(j.list) && j.list[0];
     if (!v) return { ok: false, error: '未找到该片目' };
     return { ok: true, vod: normVod(v) };
@@ -150,4 +155,21 @@ async function test(api) {
   return { ok: false, hint: r.error };
 }
 
+
+// 采集接口常位于 /provide/vod 子路径（如 xxx/api.php/provide/vod）。
+// 基址不含 provide 时额外尝试该子路径，兼容只填到 /api.php 的站点。
+function buildCandidates(base, q) {
+  const cands = [base + '/?' + q];
+  if (!base.toLowerCase().includes('provide')) {
+    cands.push(base + '/provide/vod?' + q);
+  }
+  return cands;
+}
+async function fetchJsonAny(cands) {
+  let lastErr;
+  for (const u of cands) {
+    try { return await getJson(u); } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('接口无可用响应');
+}
 module.exports = { search, detail, test, presets };
