@@ -14,3 +14,7 @@ api接口/
 # 无头回归测试产物（test-sources.js 隔离环境与输出）
 .test-userdata/
 wf-src-checks.json
+
+# 接口测试材料（含第三方源地址，不公开）
+api-report.json
+test-apis.js
