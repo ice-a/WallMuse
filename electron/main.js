@@ -2,7 +2,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, protocol, net, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const Library = require('./library');
 const wallpaper = require('./wallpaper');
 const wallhaven = require('./wallhaven');
 const bing = require('./bing');
@@ -14,12 +13,14 @@ const cms = require('./cms');
 const music = require('./music');
 const { Storage } = require('./storage');
 const { EnvFile } = require('./env');
+const { Library, KNOWN_ENV_KEYS } = require('./library');
 
 const isDev = !app.isPackaged;
 
 let win = null;
 let lib = null;
 let storage = null;
+let envFile = null; // 数据目录/.env — 敏感配置与应用默认值的持久化载体
 let rotateTimer = null;
 
 // ---------- 自定义协议：安全地提供本地图片 ----------
@@ -49,7 +50,7 @@ function relaxMediaCors() {
 
 function dataDir() { return storage.dataDir; }
 function initLibrary() {
-  const envFile = new EnvFile(path.join(storage.dataDir, '.env'));
+  envFile = new EnvFile(path.join(storage.dataDir, '.env'), KNOWN_ENV_KEYS);
   lib = new Library(storage.dataDir, envFile);
 }
 
@@ -144,8 +145,8 @@ function registerIpc() {
   });
   ipcMain.handle('wp:platform', () => ({ platform: process.platform, backend: wallpaper.backendName() }));
 
-  // Wallhaven（接口地址由设置提供）
-  ipcMain.handle('wh:search', (_e, params) => wallhaven.search(params, lib.settings.endpoints?.wallhaven));
+  // Wallhaven（接口地址由设置提供；API Key 来自 .env，搜索请求自动附带）
+  ipcMain.handle('wh:search', (_e, params) => wallhaven.search(params, lib.settings.endpoints?.wallhaven, lib.settings.wallhavenApiKey));
   ipcMain.handle('wh:download', async (_e, wall) => {
     const r = await wallhaven.download(wall, path.join(dataDir(), 'downloads'));
     if (r.ok) lib.addFiles([r.path], 'download', { sourceId: wall.id, sourceUrl: wall.url, name: wall.id });
@@ -259,6 +260,33 @@ function registerIpc() {
     lib.updateSettings(patch);
     applyRotateSchedule();
     return lib.settings;
+  });
+
+  // .env 配置文件（查看 / 编辑 / 恢复默认模板，保存后免重启生效）
+  ipcMain.handle('env:read', () => {
+    envFile?.ensureDefaults();
+    return envFile.readRaw();
+  });
+  ipcMain.handle('env:write', (_e, text) => {
+    try {
+      if (typeof text !== 'string') return { ok: false, error: '内容格式无效' };
+      envFile.writeRaw(text);
+      lib.reloadEnv();
+      applyRotateSchedule();
+      return { ok: true, settings: lib.settings };
+    } catch (e) {
+      return { ok: false, error: String(e.message || e) };
+    }
+  });
+  ipcMain.handle('env:reset', () => {
+    try {
+      envFile.resetToTemplate();
+      lib.reloadEnv();
+      applyRotateSchedule();
+      return { ok: true, settings: lib.settings, text: envFile.readRaw().text };
+    } catch (e) {
+      return { ok: false, error: String(e.message || e) };
+    }
   });
 
   // ---------- 配置备份（导出 / 导入 JSON / 从 URL 导入） ----------

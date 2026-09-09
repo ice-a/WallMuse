@@ -21,3 +21,6 @@ test-apis.js
 
 # 本地私有源配置（含第三方/成人源地址，不公开推送）
 config.local.yaml
+
+# .env 配置文件（含密钥与私有源，不公开）
+.env

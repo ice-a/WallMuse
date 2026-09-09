@@ -29,7 +29,8 @@ async function loadSettings() { settings.value = await window.wallmuse.getSettin
 
 provide('appCtx', {
   items, settings, refresh, loadSettings, showToast, platform,
-  mediaUrl: (item) => 'media://img/' + encodeURIComponent(item.path),
+  // Web 模式下图库条目直接是 http/data 地址，原样透传；桌面版走 media:// 自定义协议
+  mediaUrl: (item) => (/^(https?:|data:)/.test(item.path) ? item.path : 'media://img/' + encodeURIComponent(item.path)),
 });
 
 // ---------- 首次启动：数据存储位置向导 ----------

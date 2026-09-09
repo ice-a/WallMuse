@@ -9,10 +9,16 @@
     "email": "wallmuse@users.noreply.github.com"
   },
   "license": "MIT",
+  "homepage": "https://github.com/ice-a/WallMuse",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ice-a/WallMuse.git"
+  },
   "scripts": {
     "dev": "vite",
     "dev:electron": "vite build && electron .",
     "build": "vite build && electron-builder",
+    "build:web": "vite build",
     "build:ci": "vite build && electron-builder --publish never",
     "build:dir": "vite build && electron-builder --dir",
     "build:linux": "vite build && electron-builder --linux AppImage deb",

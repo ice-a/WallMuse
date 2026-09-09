@@ -6,7 +6,11 @@ const crypto = require('crypto');
 const EXT_OK = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp']);
 
 // 源/接口与敏感配置键 — 只存 数据目录/.env，不写 library.json（避免随图库/备份泄露）
-const ENV_KEYS = ['aiPresets', 'aiActive', 'cmsApis', 'musicApis', 'customSources', 'builtinSources', 'randomChains', 'endpoints'];
+const ENV_KEYS = ['aiPresets', 'aiActive', 'cmsApis', 'musicApis', 'customSources', 'builtinSources', 'randomChains', 'endpoints', 'wallhavenApiKey'];
+// 应用默认值键 — .env 中配置时优先于界面保存值（用于装机预设 / 批量部署）
+const APP_DEFAULT_KEYS = ['autoRotate', 'rotateMinutes'];
+// .env 已知键名（无前缀形式），供 EnvFile 做旧版本无前缀行的迁移
+const KNOWN_ENV_KEYS = [...ENV_KEYS, ...APP_DEFAULT_KEYS];
 
 // 轻量 JSON 持久化（原子写，避免 electron-store 的 ESM 兼容问题）
 class JsonStore {
@@ -98,16 +102,27 @@ class Library {
     this.store.set('settings', stored);
   }
 
-  /** 启动时从 .env 回载敏感/源配置（仅内存） */
+  /** 启动时从 .env 回载敏感/源配置与应用默认值（仅内存） */
   _loadEnvValues() {
     if (!this.envFile) return;
     const values = {};
     for (const [k, v] of Object.entries(this.envFile.getAll())) {
-      if (!ENV_KEYS.includes(k)) continue;
-      try { values[k] = JSON.parse(v); } catch { values[k] = v; }
+      const key = k.replace(/^WALLMUSE_/, '');
+      if (ENV_KEYS.includes(key)) {
+        try { values[key] = JSON.parse(v); } catch { values[key] = v; }
+      } else if (key === 'autoRotate') {
+        if (/^(1|true|on)$/i.test(v)) values[key] = true;
+        else if (/^(0|false|off)$/i.test(v)) values[key] = false;
+      } else if (key === 'rotateMinutes') {
+        const n = Number(v);
+        if (Number.isFinite(n) && n >= 1 && n <= 1440) values[key] = Math.round(n);
+      }
     }
     this.applyEnvValues(values);
   }
+
+  /** 重新读取 .env 并刷新内存配置（设置页编辑 .env 后免重启生效） */
+  reloadEnv() { this._loadEnvValues(); }
 
   /** 把 ENV_KEYS 写入 .env（JSON 序列化，便于原样回载） */
   _saveEnvValues() {
@@ -252,4 +267,4 @@ class Library {
   }
 }
 
-module.exports = Library;
+module.exports = { Library, KNOWN_ENV_KEYS, ENV_KEYS, APP_DEFAULT_KEYS };

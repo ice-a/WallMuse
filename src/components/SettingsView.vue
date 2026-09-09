@@ -197,6 +197,54 @@ async function handleImportResult(r, via = '文件') {
     cfgMsg.value = { ok: false, text: r.error || '导入失败' };
   }
 }
+
+// ---------- .env 配置文件（查看 / 编辑 / 恢复默认模板） ----------
+const envInfo = ref(null);   // { path, exists }
+const envText = ref('');
+const envBusy = ref(false);
+const envMsg = ref(null);    // { ok, text }
+
+async function loadEnv() {
+  envBusy.value = true;
+  try {
+    const r = await window.wallmuse.envRead();
+    envInfo.value = r;
+    envText.value = r.text || '';
+  } finally { envBusy.value = false; }
+}
+loadEnv();
+
+async function saveEnv() {
+  envBusy.value = true;
+  try {
+    const r = await window.wallmuse.envWrite(envText.value);
+    if (r.ok) {
+      envMsg.value = { ok: true, text: '已保存并生效（敏感配置 / 默认值已重新载入）' };
+      await ctx.loadSettings();
+      s.value = JSON.parse(JSON.stringify(ctx.settings.value));
+    } else {
+      envMsg.value = { ok: false, text: r.error || '保存失败' };
+    }
+  } catch (e) {
+    envMsg.value = { ok: false, text: String(e.message || e) };
+  } finally { envBusy.value = false; }
+}
+
+async function resetEnv() {
+  if (!confirm('用默认模板覆盖当前 .env？文件中已保存的源配置与密钥会丢失（界面内重新保存可恢复），继续？')) return;
+  envBusy.value = true;
+  try {
+    const r = await window.wallmuse.envReset();
+    if (r.ok) {
+      envText.value = r.text || '';
+      envMsg.value = { ok: true, text: '已恢复默认模板' };
+      await ctx.loadSettings();
+      s.value = JSON.parse(JSON.stringify(ctx.settings.value));
+    } else {
+      envMsg.value = { ok: false, text: r.error || '重置失败' };
+    }
+  } finally { envBusy.value = false; }
+}
 </script>
 
 <template>
@@ -355,6 +403,30 @@ async function handleImportResult(r, via = '文件') {
         </div>
         <div v-if="cfgMsg" :style="{ fontSize: '12px', marginTop: '8px', color: cfgMsg.ok ? 'var(--ok)' : 'var(--danger)', wordBreak: 'break-all' }">
           {{ cfgMsg.ok ? '✓ ' : '✗ ' }}{{ cfgMsg.text }}
+        </div>
+      </div>
+
+      <!-- .env 配置文件 -->
+      <h3 style="font-size: 15px; margin-top: 26px">.env 配置文件（高级）</h3>
+      <p style="color: var(--text-dim); font-size: 12px; margin-top: -6px">
+        敏感信息（模型密钥、自定义源、接口地址）与应用默认值都存放在数据目录的 .env 文件中，
+        不随图库 / 配置备份导出。可直接在此编辑，保存后立即生效；以 # 开头的行为注释。
+      </p>
+      <div class="preset-card">
+        <div class="kv" style="margin-bottom: 8px; word-break: break-all">
+          📄 {{ envInfo?.path || '…' }}
+        </div>
+        <textarea v-model="envText" spellcheck="false" rows="14"
+                  style="width: 100%; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6;
+                         background: var(--bg); color: var(--text); border: 1px solid var(--border);
+                         border-radius: 8px; padding: 10px; resize: vertical"></textarea>
+        <div class="row" style="margin-top: 10px">
+          <button :disabled="envBusy" @click="loadEnv">↺ 重新载入</button>
+          <button class="primary" :disabled="envBusy" @click="saveEnv">💾 保存 .env</button>
+          <button class="ghost" style="color: var(--danger)" :disabled="envBusy" @click="resetEnv">恢复默认模板</button>
+        </div>
+        <div v-if="envMsg" :style="{ fontSize: '12px', marginTop: '8px', color: envMsg.ok ? 'var(--ok)' : 'var(--danger)' }">
+          {{ envMsg.ok ? '✓ ' : '✗ ' }}{{ envMsg.text }}
         </div>
       </div>
 

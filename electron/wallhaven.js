@@ -4,11 +4,12 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 
-function search({ q = '', sorting = 'relevancy', page = 1, atleast = '', colors = '', categories = '100', purity = '100' } = {}, apiBase = '') {
+function search({ q = '', sorting = 'relevancy', page = 1, atleast = '', colors = '', categories = '100', purity = '100' } = {}, apiBase = '', apiKey = '') {
   if (!/^https?:\/\//.test(String(apiBase))) {
     return Promise.resolve({ ok: false, error: '未配置 Wallhaven 接口地址，请先在设置中导入源配置' });
   }
   const url = new URL(apiBase.replace(/\/+$/, '') + '/search');
+  if (apiKey) url.searchParams.set('apikey', String(apiKey));
   if (q) url.searchParams.set('q', q);
   url.searchParams.set('sorting', sorting);
   url.searchParams.set('page', String(page));

@@ -236,4 +236,4 @@ async function testSource(src) {
   }
 }
 
-module.exports = { listSources, fetchImageBatch, resolveVideo, fetchText, testSource };
+module.exports = { listSources, fetchImageBatch, resolveVideo, fetchText, testSource, requestFinalUrl, deepGet, UA };

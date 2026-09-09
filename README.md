@@ -54,6 +54,53 @@
 
 > 影视采集接口为公开第三方 MacCMS V10 资源站，应用内置若干预设（见「影视」页站点下拉）。部分站点有访问频率 / 地区限制，建议用「＋ 添加并测试」校验可用性，或自备可直连的采集站。
 
+### .env 配置文件（敏感信息与默认值）
+
+模型密钥、自定义源、接口地址等敏感配置**不存入 `library.json`**，而是保存在 `数据目录/.env`（迁移数据目录时随行，不随配置备份导出）。首次启动会自动生成带注释的默认模板；「设置 → .env 配置文件」可直接查看 / 编辑，保存后立即生效。
+
+规则与优先级：
+
+- 一行一项 `KEY=VALUE`，复杂结构的值用 JSON 表示；`#` 开头为注释
+- 仅识别 `WALLMUSE_` 前缀键；同名真实系统环境变量 > `.env` 文件
+- `WALLMUSE_wallhavenApiKey` — Wallhaven API Key，搜索请求自动附带 `apikey` 参数
+- `WALLMUSE_autoRotate` / `WALLMUSE_rotateMinutes` — 应用默认值（轮换开关与间隔），配置后优先于界面保存值，适合装机预设 / 批量部署
+- `WALLMUSE_aiPresets` / `WALLMUSE_cmsApis` / `WALLMUSE_musicApis` / `WALLMUSE_customSources` / `WALLMUSE_builtinSources` / `WALLMUSE_randomChains` / `WALLMUSE_endpoints` — 应用托管的结构化源配置，在应用内保存时自动写回
+- 删除 `.env` 后重启应用会重新生成默认模板
+
+## 部署为 Web（Vercel）
+
+应用支持以纯 Web 方式部署：浏览器端自动检测环境并挂载 Web 适配器（`src/web-adapter.js`），网络能力经 `/api/rpc`（Vercel Serverless，`api/rpc.js`）调用，复用桌面版同一套服务模块。
+
+- ✅ Web 可用：发现（Bing / Wallhaven / 接口图 / 文字 / 视频）、影视、音乐、小说、AI 对话、AI 创作、配置导入导出、收藏 / 标签 / 合集（存浏览器 localStorage）
+- ⚠️ 降级：设为壁纸 / 本地文件导入 / 数据目录迁移为桌面版专属；Web 抓图入库保存的是**直链**（源站删除即失效）；AI 对话为整段返回（非逐字流式）
+
+### 部署步骤
+
+1. 代码推送到 GitHub，在 Vercel「Add New → Project」导入仓库（或 `npx vercel` CLI）
+2. Framework Preset 选 **Vite**（或保持自动识别，`vercel.json` 已指定 `npm run build:web` / 输出 `dist`），`api/` 目录会自动作为 Serverless Functions 部署
+3. 在 **Settings → Environment Variables** 按下表添加 `WALLMUSE_*` 环境变量后重新 Deploy
+
+### Vercel 环境变量填写表
+
+值均为**原始 JSON 字符串**（与桌面版 `.env` 中 `WALLMUSE_` 键完全同名同格式），可直接复用 `.env` 文件里的行：
+
+| 变量名 | 值示例 | 说明 |
+| --- | --- | --- |
+| `WALLMUSE_aiPresets` | `[{"name":"OpenAI","baseUrl":"https://api.openai.com","apiKey":"sk-xxx","model":"dall-e-3"}]` | AI 生图预设；**密钥只存这里，不会下发到浏览器** |
+| `WALLMUSE_chatPresets` | `[{"name":"GPT","baseUrl":"https://api.openai.com","apiKey":"sk-xxx","model":"gpt-4o-mini"}]` | AI 对话预设 |
+| `WALLMUSE_endpoints` | `{"wallhaven":"https://wallhaven.cc/api/v1","bing":["https://bing.img.run"],"netease":"https://…"}` | 功能接口（Wallhaven / Bing 域名 / 网易云） |
+| `WALLMUSE_builtinSources` | `{"image":[{"key":"s1","name":"示例","url":"https://…","kind":"direct"}],"text":[],"video":[]}` | 内置内容源（图片 / 文字 / 视频） |
+| `WALLMUSE_customSources` | 同上结构 | 自定义内容源 |
+| `WALLMUSE_randomChains` | `{"desktop":[{"name":"随机源A","url":"https://…"}],"mobile":[]}` | 随机壁纸端点链（302 直链型） |
+| `WALLMUSE_cmsApis` | `[{"name":"采集站","url":"https://…/api.php"}]` | 影视 CMS 采集接口 |
+| `WALLMUSE_musicApis` | `[{"name":"Meting","url":"https://…"}]` | 音乐源 |
+| `WALLMUSE_wallhavenApiKey` | `sk-…（Wallhaven Key）` | 可选，搜索自动附带 apikey |
+| `WALLMUSE_aiActive` / `WALLMUSE_chatActive` | `0` | 默认预设序号，可选 |
+
+不配置某项时，对应功能页会给出「未配置」提示；客户端设置页填写的非敏感配置（含客户端自己填的密钥）优先于环境变量。
+
+> ⚠️ **公开部署须知**：`/api/rpc` 是公开入口，会以你的服务端密钥向配置的接口发请求（AI 生图 / 对话会消耗你的额度），也存在被第三方当作开放代理滥用的风险（SSRF）。建议仅个人使用或自行加访问控制（如 Vercel Authentication / 中间件鉴权 / Cloudflare Access）。Serverless 有执行时限（Hobby 约 60s），AI 生图偏慢的模型可能超时；Bing / 接口抓取在 Web 模式解析为直链由浏览器加载，不占响应体。
+
 ## 开发
 
 ```bash

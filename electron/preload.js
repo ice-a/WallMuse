@@ -74,6 +74,10 @@ window.wallmuse = {
   // 设置
   getSettings: () => invoke('settings:get'),
   setSettings: (patch) => invoke('settings:set', patch),
+  // .env 配置文件（查看 / 编辑 / 恢复默认模板）
+  envRead: () => invoke('env:read'),
+  envWrite: (text) => invoke('env:write', text),
+  envReset: () => invoke('env:reset'),
   // 配置备份（导出 / 导入 JSON / 从 URL 导入）
   configExport: (opts) => invoke('config:export', opts),
   configImport: () => invoke('config:import'),

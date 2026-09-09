@@ -23,7 +23,7 @@ async function generate() {
       presetIndex: presetIndex.value == null ? undefined : presetIndex.value,
     });
     if (r.ok) {
-      lastImage.value = 'media://img/' + encodeURIComponent(r.path);
+      lastImage.value = ctx.mediaUrl({ path: r.path });
       await ctx.refresh();
       ctx.showToast('生成完成，已入库 ✓');
     } else {
