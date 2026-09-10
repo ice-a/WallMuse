@@ -2,6 +2,8 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, protocol, net, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const https = require('https');
 const wallpaper = require('./wallpaper');
 const wallhaven = require('./wallhaven');
 const bing = require('./bing');
@@ -22,6 +24,9 @@ let lib = null;
 let storage = null;
 let envFile = null; // 数据目录/.env — 敏感配置与应用默认值的持久化载体
 let rotateTimer = null;
+
+// 与 apisrc/cms/music 共用同一浏览器 UA，避免被源站以「非法客户端」拒掉
+const UA = apisrc.UA;
 
 // ---------- 自定义协议：安全地提供本地图片 ----------
 function registerMediaProtocol() {
