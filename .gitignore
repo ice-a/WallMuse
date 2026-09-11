@@ -12,7 +12,7 @@ wallmuse-sources_info.json
 # 私有源采集与测试材料（不公开推送）
 api接口/
 
-# 无头回归测试产物（test-sources.js 隔离环境与输出）
+# 无头回归测试产物（隔离 userData 环境与检查输出）
 .test-userdata/
 wf-src-checks.json
 
@@ -25,3 +25,6 @@ config.local.yaml
 
 # .env 配置文件（含密钥与私有源，不公开）
 .env
+
+# Qwen Code 本地会话配置
+.qwen/
